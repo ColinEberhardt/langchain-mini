@@ -1,6 +1,8 @@
 import env from "dotenv";
 env.config();
 
+import fs from "fs";
+import { Parser } from "expr-eval";
 import * as readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 const rl = readline.createInterface({ input, output });
@@ -23,12 +25,16 @@ const tools = {
       "a search engine. useful for when you need to answer questions about current events. input should be a search query.",
     execute: googleSearch,
   },
+  calculator: {
+    description:
+      "Useful for getting the result of a math expression. The input to this tool should be a valid mathematical expression that could be executed by a simple calculator.",
+    execute: (input) => Parser.evaluate(input).toString(),
+  },
 };
 
 const question = await rl.question("How can I help? ");
 
 // construct the prompt, using our question
-import fs from "fs";
 const promptTemplate = fs.readFileSync("prompt.txt", "utf8");
 let prompt = promptTemplate.replace("${question}", question).replace(
   "${tools}",
@@ -49,7 +55,7 @@ const completePrompt = async (prompt) =>
       model: "text-davinci-003",
       prompt,
       max_tokens: 256,
-      temperature: 1,
+      temperature: 0.7,
       stream: false,
       stop: ["Observation:"],
     }),
@@ -60,7 +66,6 @@ const completePrompt = async (prompt) =>
 let finished = false;
 while (!finished) {
   const response = await completePrompt(prompt);
-  console.log(response);
 
   // add this to the prompt
   prompt += response;
@@ -74,9 +79,9 @@ while (!finished) {
     const result = await tools[action].execute(actionInput);
     prompt += `Observation: ${result}\n`;
   } else {
-    console.log(prompt);
     finished = true;
   }
+  console.log(prompt);
 }
 
 rl.close();
