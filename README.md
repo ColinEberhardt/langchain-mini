@@ -23,6 +23,20 @@ Install dependencies, and run (with node >= v18):
 
 ~~~
 % npm install
+~~~
+
+You'll need to have both an OpenAI and SerpApi keys. These can be supplied to the application via a `.env` file:
+
+~~~
+OPENAI_API_KEY="..."
+SERPAPI_API_KEY="..."
+~~~
+
+You can now run the chain:
+
+~~~
 % node index.mjs
+How can I help? what was the name of the first man on the moon?
+Neil Armstrong
 ~~~
 
