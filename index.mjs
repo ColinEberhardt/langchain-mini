@@ -10,6 +10,7 @@ const rl = readline.createInterface({ input, output });
 const promptTemplate = fs.readFileSync("prompt.txt", "utf8");
 const mergeTemplate = fs.readFileSync("merge.txt", "utf8");
 
+// use serpapi to answer the question
 const googleSearch = async (question) =>
   await fetch(
     `https://serpapi.com/search?api_key=${process.env.SERPAPI_API_KEY}&q=${question}`
@@ -17,11 +18,13 @@ const googleSearch = async (question) =>
     .then((res) => res.json())
     .then(
       (res) =>
+        // try to pull the answer from various components of the response
         res.answer_box?.answer ||
         res.answer_box?.snippet ||
         res.organic_results?.[0]?.snippet
     );
 
+// tools that can be used to answer questions
 const tools = {
   search: {
     description:
@@ -35,8 +38,8 @@ const tools = {
   },
 };
 
-// use GPT-3.5 to answer the question
-const completePrompt = async (prompt) => 
+// use GPT-3.5 to complete a given prompts
+const completePrompt = async (prompt) =>
   await fetch("https://api.openai.com/v1/completions", {
     method: "POST",
     headers: {
@@ -61,7 +64,7 @@ const completePrompt = async (prompt) =>
     });
 
 const answerQuestion = async (question) => {
-  // construct the prompt, using our question
+  // construct the prompt, with our question and the tools that the chain can use
   let prompt = promptTemplate.replace("${question}", question).replace(
     "${tools}",
     Object.keys(tools)
@@ -69,28 +72,26 @@ const answerQuestion = async (question) => {
       .join("\n")
   );
 
-  let finished = false;
-  while (!finished) {
+  // allow the LLM to iterate until it finds a final answer
+  while (true) {
     const response = await completePrompt(prompt);
 
     // add this to the prompt
     prompt += response;
 
-    // does the response have an action?
     const action = response.match(/Action: (.*)/)?.[1];
     if (action) {
+      // execute the action specified by the LLMs
       const actionInput = response.match(/Action Input: "?(.*)"?/)?.[1];
-
-      // execute the action
       const result = await tools[action.trim()].execute(actionInput);
       prompt += `Observation: ${result}\n`;
     } else {
-      finished = true;
       return response.match(/Final Answer: (.*)/)?.[1];
     }
   }
 };
 
+// merge the chat history with a new question
 const mergeHistory = async (question, history) => {
   const prompt = mergeTemplate
     .replace("${question}", question)
@@ -98,6 +99,7 @@ const mergeHistory = async (question, history) => {
   return await completePrompt(prompt);
 };
 
+// main loop - answer the user's questions
 let history = "";
 while (true) {
   let question = await rl.question("How can I help? ");
@@ -108,4 +110,3 @@ while (true) {
   console.log(answer);
   history += `Q:${question}\nA:${answer}\n`;
 }
-
