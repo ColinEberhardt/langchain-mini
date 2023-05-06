@@ -17,6 +17,8 @@ It takes the average person about three hours to solve a Rubik's cube for the fi
 
 This is not intended to be a replacement for LangChain, instead it was built for fun and educational purposes. If you're interested in how LangChain, and similar tools work, this is a good starting point.
 
+For more information about this project, read the accompanying blogpost - [Re-implementing LangChain in 100 lines of code](https://blog.scottlogic.com/2023/05/04/langchain-mini.html)
+
 ## Running / developing
 
 Install dependencies, and run (with node >= v18):
